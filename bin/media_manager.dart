@@ -1,6 +1,6 @@
 import 'package:media_manager/media_manager.dart';
 
-void main(List<String> arguments) {
+Future<void> main(List<String> arguments) async {
   final db = MediaDatabase();
 
   printTitle('Buecher hinzufuegen');
@@ -11,45 +11,62 @@ void main(List<String> arguments) {
     Book(id: 4, title: 'Der Herr der Ringe', year: 1954, author: 'J. R. R. Tolkien', pages: 1178, genre: 'Fantasy'),
   ];
   for (final book in books) {
-    db.add(book);
+    await db.add(book);
     print('Hinzugefuegt: ${book.title}');
   }
-  db.add(Movie(id: 5, title: 'Alien', year: 1979, director: 'Ridley Scott', durationMinutes: 117));
+  await db.add(Movie(id: 5, title: 'Alien', year: 1979, director: 'Ridley Scott', durationMinutes: 117));
   print('Hinzugefuegt: Alien (Film, erscheint nicht in der Buchliste)');
 
   printTitle('Doppelte ID wird abgelehnt');
   try {
-    db.add(Book(id: 1, title: 'Kopie', year: 2000, author: 'Unbekannt', pages: 1, genre: 'Keines'));
+    await db.add(Book(id: 1, title: 'Kopie', year: 2000, author: 'Unbekannt', pages: 1, genre: 'Keines'));
   } on ArgumentError catch (e) {
     print('Fehler: $e');
   }
 
   printTitle('Alle Buecher');
-  printBooks(db.books);
+  printBooks(await db.books);
 
   printTitle('Suche nach Autor "tolkien"');
-  printBooks(db.findBooks(author: 'tolkien'));
+  printBooks(await db.findBooks(author: 'tolkien'));
 
   printTitle('Suche nach Genre "Science-Fiction"');
-  printBooks(db.findBooks(genre: 'Science-Fiction'));
+  printBooks(await db.findBooks(genre: 'Science-Fiction'));
 
   printTitle('Suche nach Jahr 1984');
-  printBooks(db.findBooks(year: 1984));
+  printBooks(await db.findBooks(year: 1984));
 
   printTitle('Suche nach Genre "Fantasy" und Jahr 1937');
-  printBooks(db.findBooks(genre: 'Fantasy', year: 1937));
+  printBooks(await db.findBooks(genre: 'Fantasy', year: 1937));
 
   printTitle('Suche ohne Treffer (Autor "Rowling")');
-  printBooks(db.findBooks(author: 'Rowling'));
+  printBooks(await db.findBooks(author: 'Rowling'));
+
+  printTitle('Programm laeuft weiter, waehrend die Datenbank arbeitet');
+  final pending = db.findById(3);
+  print('Anfrage gestartet, Ergebnis steht noch aus.');
+  print('Ergebnis: ${await pending}');
+
+  printTitle('Drei Lesezugriffe nacheinander');
+  final sequential = Stopwatch()..start();
+  await db.findById(1);
+  await db.findById(2);
+  await db.findById(3);
+  print('Dauer: ${sequential.elapsedMilliseconds} ms');
+
+  printTitle('Drei Lesezugriffe gleichzeitig');
+  final parallel = Stopwatch()..start();
+  await Future.wait([db.findById(1), db.findById(2), db.findById(3)]);
+  print('Dauer: ${parallel.elapsedMilliseconds} ms');
 
   printTitle('Buch mit ID 2 loeschen');
-  print(db.delete(2) ? 'Geloescht.' : 'Nicht gefunden.');
+  print(await db.delete(2) ? 'Geloescht.' : 'Nicht gefunden.');
 
   printTitle('Buch mit ID 2 erneut loeschen');
-  print(db.delete(2) ? 'Geloescht.' : 'Nicht gefunden.');
+  print(await db.delete(2) ? 'Geloescht.' : 'Nicht gefunden.');
 
   printTitle('Alle Buecher nach dem Loeschen');
-  printBooks(db.books);
+  printBooks(await db.books);
 }
 
 void printTitle(String title) {

@@ -8,7 +8,7 @@ class MediaDatabase {
 
   final Map<int, MediaItem> _items = {};
 
-  // getter
+  // read access
   Future<List<MediaItem>> get all async {
     await _simulateIo();
     return List.unmodifiable(_items.values);
@@ -22,14 +22,6 @@ class MediaDatabase {
   Future<List<Movie>> get movies async {
     await _simulateIo();
     return List.unmodifiable(_items.values.whereType<Movie>());
-  }
-
-  Future<void> add(MediaItem item) async {
-    await _simulateIo();
-    if (_items.containsKey(item.id)) {
-      throw ArgumentError.value(item.id, 'id', 'already exists');
-    }
-    _items[item.id] = item;
   }
 
   Future<MediaItem?> findById(int id) async {
@@ -55,6 +47,15 @@ class MediaDatabase {
     }).toList();
   }
 
+  // write access
+  Future<void> add(MediaItem item) async {
+    await _simulateIo();
+    if (_items.containsKey(item.id)) {
+      throw ArgumentError.value(item.id, 'id', 'already exists');
+    }
+    _items[item.id] = item;
+  }
+
   Future<bool> update(MediaItem item) async {
     await _simulateIo();
     if (!_items.containsKey(item.id)) {
@@ -69,9 +70,11 @@ class MediaDatabase {
     return _items.remove(id) != null;
   }
 
-  // Die Verzoegerung steht immer vor dem Datenzugriff, damit Pruefen und
-  // Schreiben ohne Unterbrechung ablaufen und parallele Aufrufe sich nicht
-  // in die Quere kommen.
+  // helpers
+
+  // The delay always comes before the data access, so that checking and
+  // writing run without interruption and concurrent calls cannot interfere
+  // with each other.
   Future<void> _simulateIo() => Future.delayed(_ioDelay);
 
   bool _contains(String text, String query) {

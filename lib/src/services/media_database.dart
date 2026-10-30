@@ -21,10 +21,15 @@ class MediaDatabase {
   MediaItem? findById(int id) => _items[id];
 
   List<MediaItem> findByTitle(String query) {
-    final search = query.toLowerCase();
-    return _items.values
-        .where((item) => item.title.toLowerCase().contains(search))
-        .toList();
+    return _items.values.where((item) => _contains(item.title, query)).toList();
+  }
+
+  List<Book> findBooks({String? author, String? genre, int? year}) {
+    return _items.values.whereType<Book>().where((book) {
+      return (author == null || _contains(book.author, author)) &&
+          (genre == null || _contains(book.genre, genre)) &&
+          (year == null || book.year == year);
+    }).toList();
   }
 
   bool update(MediaItem item) {
@@ -36,4 +41,8 @@ class MediaDatabase {
   }
 
   bool delete(int id) => _items.remove(id) != null;
+
+  bool _contains(String text, String query) {
+    return text.toLowerCase().contains(query.toLowerCase());
+  }
 }
